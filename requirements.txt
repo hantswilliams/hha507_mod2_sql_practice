@@ -1,1 +1,4 @@
-pandas==2.0.1
+pandas
+sqlalchemy
+pymysql
+python-dotenv
