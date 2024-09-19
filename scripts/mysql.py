@@ -17,27 +17,73 @@ DATABASE_URL = f'mysql+pymysql://{username}:{password}@{host}:3306/life'
 # Step 1: Create the engine (connects to the remote MySQL database)
 engine = create_engine(DATABASE_URL)
 
-# Step 2: Test the connection by querying the MySQL version
-with engine.connect() as connection:
-    result = connection.execute("SELECT VERSION();")
-    version = result.fetchone()
-    print(f"MySQL Database version: {version[0]}")
+# Step 2: Create some fake data
+df = pd.read_csv('https://data.cdc.gov/resource/it4f-frdc.csv')
 
-# Step 3: Create some fake data
-data = {
-    'id': [1, 2, 3],
-    'name': ['Alice', 'Bob', 'Charlie'],
-    'age': [30, 25, 35]
-}
+females = df[df['sex'] == 'Female']
+males = df[df['sex'] == 'Male']
 
-df = pd.DataFrame(data)
+females['leb'].describe()
+males['leb'].describe()
 
 # Step 4: Save the DataFrame to the MySQL database
-df.to_sql('users', engine, if_exists='replace', index=False)
+females.to_sql('female', engine, if_exists='replace', index=False)
+males.to_sql('male', engine, if_exists='replace', index=False)
 
 # Step 5: Query the table to verify the data
-query = 'SELECT * FROM users'
+query = 'SELECT * FROM female'
 result_df = pd.read_sql(query, engine)
+result_df
 
 # Step 6: Display the result
 print(result_df)
+
+query_california_females = 'select * from female where area = "North Carolina"' 
+df_ca = pd.read_sql(query_california_females, engine)
+df_ca
+
+query_2 = """
+SELECT * 
+FROM female
+WHERE area in("California", "Texas", "North Carolina", "South Carolina")
+LIMIT 5;
+"""
+
+test = pd.read_sql(query_2, engine)
+test
+
+
+query_3 = """
+SELECT * 
+FROM female
+WHERE leb < 78.0
+LIMIT 5;
+"""
+
+
+query_4 = """
+SELECT * 
+FROM male
+WHERE leb < 78.0
+LIMIT 5;
+"""
+
+query_5 = """
+SELECT * 
+FROM male
+WHERE leb > 75.0
+LIMIT 5;
+"""
+
+query_6 = """
+SELECT * 
+FROM female
+WHERE leb > 80.0
+LIMIT 5;
+"""
+
+worst_female = pd.read_sql(query_3, engine)
+worst_male = pd.read_sql(query_4, engine)
+
+best_female = pd.read_sql(query_6, engine)
+best_male = pd.read_sql(query_5, engine)
